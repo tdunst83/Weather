@@ -4,6 +4,8 @@ import com.weather.Day;
 import com.weather.Region;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
@@ -11,7 +13,7 @@ import static org.junit.Assert.assertNotEquals;
 
 public class CachingWeatherServiceTest {
     @Test
-    public void delegatesToAnotherWeatherService() throws Exception {
+    public void delegatesToAnotherWeatherService() {
         WeatherService delegate = mock(WeatherService.class);
         when(delegate.getWeather(Region.BIRMINGHAM, Day.FRIDAY)).thenReturn("Some weather");
 
@@ -140,6 +142,58 @@ public class CachingWeatherServiceTest {
         String birminghamFridayWeather2 = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
         verify(delegate, times(2)).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
     }
+
+    @Test
+    public void lastCallIsLastCallEvenIfTakenFromCache(){
+        WeatherService delegate = mock(WeatherService.class);
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.FRIDAY)).thenReturn("Birmingham Friday weather");
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.SATURDAY)).thenReturn("Birmingham Saturday weather");
+        when(delegate.getWeather(Region.LONDON, Day.MONDAY)).thenReturn("London Monday weather");
+        when(delegate.getWeather(Region.LONDON, Day.WEDNESDAY)).thenReturn("London Wednesday weather");
+
+        WeatherService weatherService = new CachingWeatherService(delegate);
+
+        String birminghamFridayWeather = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+        String londonMondayWeather = weatherService.getWeather(Region.LONDON, Day.MONDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.MONDAY);
+
+        String birminghamFridayWeather2 = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+        String londonWednesdayWeather = weatherService.getWeather(Region.LONDON, Day.WEDNESDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.WEDNESDAY);
+
+        String birminghamFridayWeather3 = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verifyNoMoreInteractions(delegate);
+
+    }
+
+
+    @Test
+    public void CacheGetsClearedAfterTwentySeconds() throws InterruptedException {
+
+        WeatherService delegate = mock(WeatherService.class);
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.FRIDAY)).thenReturn("Birmingham Friday weather");
+
+
+        WeatherService weatherService = new CachingWeatherService(delegate);
+
+        String birminghamFridayWeather = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+        TimeUnit.SECONDS.sleep(25);
+
+        String birminghamFridayWeather2 = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate, times(2)).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+    }
+
+
+
+
+
 }
 
 
