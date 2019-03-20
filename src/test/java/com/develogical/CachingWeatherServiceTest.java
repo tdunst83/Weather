@@ -92,6 +92,28 @@ public class CachingWeatherServiceTest {
         String londonWeatherWed = weatherService.getWeather(Region.LONDON, Day.WEDNESDAY);
         verify(delegate).getWeather(Region.LONDON, Day.WEDNESDAY);
     }
+
+    @Test
+    public void reuseExistingDayCacheForCity() {
+        WeatherService delegate = mock(WeatherService.class);
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.FRIDAY)).thenReturn("Birmingham Friday weather");
+        when(delegate.getWeather(Region.LONDON, Day.MONDAY)).thenReturn("London Monday weather");
+        when(delegate.getWeather(Region.LONDON, Day.WEDNESDAY)).thenReturn("London Wednesday weather");
+
+        WeatherService weatherService = new CachingWeatherService(delegate);
+
+        String birminghamWeather = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+        String londonWeatherMon = weatherService.getWeather(Region.LONDON, Day.MONDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.MONDAY);
+
+        String londonWeatherWed = weatherService.getWeather(Region.LONDON, Day.WEDNESDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.WEDNESDAY);
+
+        String londonWeatherMon2 = weatherService.getWeather(Region.LONDON, Day.MONDAY);
+        verifyNoMoreInteractions(delegate);
+    }
 }
 
 

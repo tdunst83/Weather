@@ -22,7 +22,13 @@ public class CachingWeatherService implements WeatherService {
         if (!cityDayCache.containsKey(region) || !cityDayCache.get(region).containsKey(day) ) {
             String weather = weatherService.getWeather(region, day);
 
-            Map<Day,String> helpMap = new HashMap<Day,String>();
+            Map<Day,String> helpMap;
+            if (cityDayCache.containsKey(region)){
+                helpMap = cityDayCache.get(region);
+            }else{
+                helpMap = new HashMap<Day,String>();
+            }
+
             helpMap.put(day,weather);
 
             cityDayCache.put(region,helpMap);
