@@ -114,6 +114,32 @@ public class CachingWeatherServiceTest {
         String londonWeatherMon2 = weatherService.getWeather(Region.LONDON, Day.MONDAY);
         verifyNoMoreInteractions(delegate);
     }
+
+    @Test
+    public void checkCacheIsNoLargerThan3Size() {
+        WeatherService delegate = mock(WeatherService.class);
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.FRIDAY)).thenReturn("Birmingham Friday weather");
+        when(delegate.getWeather(Region.BIRMINGHAM, Day.SATURDAY)).thenReturn("Birmingham Saturday weather");
+        when(delegate.getWeather(Region.LONDON, Day.MONDAY)).thenReturn("London Monday weather");
+        when(delegate.getWeather(Region.LONDON, Day.WEDNESDAY)).thenReturn("London Wednesday weather");
+
+        WeatherService weatherService = new CachingWeatherService(delegate);
+
+        String birminghamFridayWeather = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+
+        String londonMondayWeather = weatherService.getWeather(Region.LONDON, Day.MONDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.MONDAY);
+
+        String londonWednesdayWeather = weatherService.getWeather(Region.LONDON, Day.WEDNESDAY);
+        verify(delegate).getWeather(Region.LONDON, Day.WEDNESDAY);
+
+        String birminghamSaturdayWeather = weatherService.getWeather(Region.BIRMINGHAM, Day.SATURDAY);
+        verify(delegate).getWeather(Region.BIRMINGHAM, Day.SATURDAY);
+
+        String birminghamFridayWeather2 = weatherService.getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+        verify(delegate, times(2)).getWeather(Region.BIRMINGHAM, Day.FRIDAY);
+    }
 }
 
 

@@ -4,13 +4,17 @@ import com.weather.Day;
 import com.weather.Region;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CachingWeatherService implements WeatherService {
 
     private WeatherService weatherService;
 
-    private Map<String,String> cityDayCache = new HashMap<String,String>();
+    private Map<String,String> cityDayCache = new LinkedHashMap<String,String>();
+
+    private int numberOfCachedEntries = 3;
+
 
     public CachingWeatherService(WeatherService delegate) {
         weatherService = delegate;
@@ -23,6 +27,7 @@ public class CachingWeatherService implements WeatherService {
 
         if (!cityDayCache.containsKey(mapKey)) {
             String weather = weatherService.getWeather(region, day);
+
 
             cityDayCache.put(mapKey, weather);
         }
